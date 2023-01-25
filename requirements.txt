@@ -1,0 +1,6 @@
+torch
+stanfordnlp
+requests
+beautifulsoup4
+xmltodict
+nltk
