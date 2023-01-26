@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block body %}
+  <div id="error-view" class="not-too-big">
+    <div class="text-center">
+      <h3>교정방식 설정 변경</h3>
+      <br><br>
+      <form action="/settings/" method="post">
+        {% csrf_token %}
+        <div id="form_style_2">
+          <div id="form_left" class="font_temp">
+          최대 저자수:<br>
+          특수문자 사용 여부: <br>
+          이슈 삭제 여부: <br>
+          저널명 마침표: <br>
+          </div>
+          <div id="form_right">
+            {{ form.max_auth }} <br>
+            {{ form.special_char }} <br>
+            {{ form.issue }} <br>
+            {{ form.journal_punct }} <br>
+          </div>
+        </div>
+      <input type="submit" value="업데이트">
+      {% if success %}
+      <h3>업데이트 완료</h3>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

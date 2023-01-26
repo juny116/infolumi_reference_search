@@ -5,6 +5,13 @@
     <div class="text-center">
       <h1>x_x</h1>
       <h3>인포루미 참고문헌 Pupmed 자동 검색 및 교정 테스트 페이지입니다.</h3>
+      {% if user.is_authenticated %}
+        Hi {{ user.username }}!
+        <p><a href="{% url 'logout' %}">Log Out</a></p>
+      {% else %}
+        <p>You are not logged in</p>
+        <a href="{% url 'login' %}">Log In</a>
+      {% endif %}
     </div>
   </div>
 

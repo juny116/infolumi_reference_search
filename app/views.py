@@ -1,39 +1,48 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import SearchForm
-
+from .forms import SearchForm, LoginForm, SettingsForm
+from .models import Settings
+from .utils import *
 
 def index(request):
     return render(request, 'web/index.html')
 
-def setting(request):
-    # question = get_object_or_404(Question, pk=question_id)
-    target = None
-    results = None
 
+def settings(request):
+    if not request.user.is_authenticated:
+        return redirect('index')
+    # try:
+    item, created = Settings.objects.get_or_create(user=request.user, 
+        defaults={'max_auth': 3, 'special_char': True, 'issue': True, 'journal_punct': True})
+
+    success = False
     if request.method == 'POST':
-        form = SearchForm(request.POST)
-        if not torch.is_tensor(weighted_embeddings):
-            error=True
-            return render(request, 'web/search.html', {'form': form, 'target': target, 'results': results, 'error': error})
+        form = SettingsForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+        else:
+            print(form.errors.as_data()) 
     else:
-        form = SearchForm()
+        form = SettingsForm(instance=item)
 
-    return render(request, 'web/search.html', {'form': form, 'target': target, 'results': results})
+    return render(request, 'web/settings.html', {'form': form, 'success': success})
 
 
 def search(request):
+    if not request.user.is_authenticated:
+        return redirect('index')
     # question = get_object_or_404(Question, pk=question_id)
     target = None
     results = None
     error = False
+    # request.user
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if form.is_valid():
-            print(form.cleaned_data['method'])
-
-            return render(request, 'web/search.html', {'form': form, 'target': target, 'results': results, 'error': error})            
-
+            uid_dict, original_list = SearchPubmedWeb(form.cleaned_data['references'].splitlines(), None)
+            revised_text = FetchPubmedAPI(uid_dict, original_list, None)
+            form = SearchForm(initial={'references': revised_text})
+            return render(request, 'web/search.html', {'form': form, 'target': target, 'results': revised_text, 'error': error})            
     else:
         form = SearchForm()
 

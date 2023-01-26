@@ -12,11 +12,11 @@
         {% csrf_token %}
         <div  id="form_style">
           참고문헌 <br>
-          {{ form.method }}     <br><br>
+          {{ form.references }}     <br><br>
         </div>
-        <input type="submit" value="분석 시작">
+        <input type="submit" value="검색 시작">
       </form>
-      <script>
+      <!-- <script>
         $(function() {
           var availableTags = [
               {% for job in all_jobs %}
@@ -28,7 +28,7 @@
             source: availableTags
           });
         });
-      </script>
+      </script> -->
       <!-- <h3>분석 대상</h3>
       <p>{{ target.name }}_{{ target.q_digit }}<br>{{ target.description }}</p> -->
       <!-- <h3>분석 결과</h3> -->
@@ -36,9 +36,7 @@
       <h4>해당하는 직종이 존재하지 않습니다.</h4>
       {% endif %}
       <div id="result">
-      {% for result, sim in results %}
-        <p><b>{{ result.name }}_{{ result.q_digit }}</b> ({{ sim|floatformat:3 }})<br>{{ result.description }}</p>
-	    {% endfor %}
+      <!-- {{ results }}   -->
       </div>
     </div>
   </div>

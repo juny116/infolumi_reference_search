@@ -42,6 +42,13 @@ div[contenteditable] {
 	/* justify-content: space-evenly;  */
 }
 
+#form_style_2 {
+	display: flex;
+	flex-direction: row;
+	/* text-align: center; */
+	justify-content: space-evenly; 
+}
+
 .font_temp {
 	font-size: 20px;
 }
@@ -49,13 +56,13 @@ div[contenteditable] {
 #form_left {
 	/* display: flex; */
 	text-align: left;
-	/* justify-content: space-between;  */
+	justify-content: space-between; 
 }
 
 #form_right {
 	/* display: flex; */
 	text-align: left;
-	/* justify-content: space-between;  */
+	justify-content: space-between; 
 }
 
 #result {

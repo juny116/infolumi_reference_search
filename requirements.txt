@@ -6,3 +6,4 @@ xmltodict
 nltk
 Django
 gunicorn
+truecase

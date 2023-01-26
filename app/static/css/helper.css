@@ -142,9 +142,3 @@ p {
 .linebreak {
 	white-space: pre-wrap;
 }
-
-
-#form_left {
-	text-align: left;
-	justify-content: start; 
-}
