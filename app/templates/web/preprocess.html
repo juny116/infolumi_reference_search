@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block body %}
+  <div id="error-view" class="not-too-big">
+    <div class="text-center">
+      <h3>데이터 전처리</h3>
+      <br><br>
+      마스킹된 단어 목록 <br><br>
+      {% for obj in masks %}
+      <form method="POST">
+          {% csrf_token %}
+          {{ obj.mask }} <button type="submit" name="delete_items" value="{{ obj.pk }}">X</button>
+      </form>
+      {% endfor %}
+      <br><br>
+      마스킹할 단어를 추가해 주세요<br><br>
+      <form action="/preprocess/" method="post">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="추가">
+      </form>
+      <br><br><br>
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit" name="build_embeddings" value="build_embeddings">임베딩 생성</button>
+      </form>
+      {% if build_done %}
+      <h3>임베딩 생성 완료</h3>
+      {% endif %}
+    </div>
+  </div>
+
+{% endblock %}

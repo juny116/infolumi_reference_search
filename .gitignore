@@ -2,6 +2,8 @@
 legacy
 results
 test_data
+data
+tmp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

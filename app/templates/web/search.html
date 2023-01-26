@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block body %}
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js"> </script>  
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js"> </script>  
+  <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/ui-lightness/jquery-ui.css"	rel="stylesheet" type="text/css"/>
+  <div id="error-view">
+    <div class="text-center">
+      <h3>참고문헌 검색 시스템</h3>
+      <br><br>
+      <form action="/search/" method="post" class="not-too-big">
+        {% csrf_token %}
+        <div  id="form_style">
+          참고문헌 <br>
+          {{ form.method }}     <br><br>
+        </div>
+        <input type="submit" value="분석 시작">
+      </form>
+      <script>
+        $(function() {
+          var availableTags = [
+              {% for job in all_jobs %}
+                  "{{ job.name }}",
+              {% endfor %}
+          ];
+          console.log(availableTags);
+          $( "#tags" ).autocomplete({
+            source: availableTags
+          });
+        });
+      </script>
+      <!-- <h3>분석 대상</h3>
+      <p>{{ target.name }}_{{ target.q_digit }}<br>{{ target.description }}</p> -->
+      <!-- <h3>분석 결과</h3> -->
+      {% if error %}
+      <h4>해당하는 직종이 존재하지 않습니다.</h4>
+      {% endif %}
+      <div id="result">
+      {% for result, sim in results %}
+        <p><b>{{ result.name }}_{{ result.q_digit }}</b> ({{ sim|floatformat:3 }})<br>{{ result.description }}</p>
+	    {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

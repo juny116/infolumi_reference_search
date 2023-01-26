@@ -21,6 +21,14 @@ def LowerBesidesProper(text):
                 proper_words.append(word.lower())
     return ' '.join(proper_words)
 
+def LowerBesidesProper2(text):
+    stf_nlp = stanfordnlp.Pipeline(processors='tokenize,mwt,pos')
+    doc = stf_nlp(text)
+    proper_words = [w.text.capitalize() if w.upos in ["PROPN","NNS"] else w.text.lower() for sent in doc.sentences for w in sent.words]
+    proper_words = []    
+
+    return ' '.join(proper_words)
+
 def GetMedlinePage(start, end):
     if start == end:
         return start
@@ -97,7 +105,7 @@ for k, v in uid_dict.items():
         if max_authors:
             revised += ', et al'
 
-        proper_nouns = LowerBesidesProper(title)
+        proper_nouns = LowerBesidesProper2(title)
 
         revised += f'. {title} '
         revised += f"{journal['ISOAbbreviation']}. "

@@ -1,0 +1,69 @@
+@charset "utf-8";
+@import url("http://fonts.googleapis.com/earlyaccess/notosanskr.css");
+
+* {
+	font-family: "Noto Sans KR", "Helvetica Neue", sans-serif;
+}
+
+body {
+  padding: 70px 0;
+}
+ul, ol {
+	margin: 0;
+	padding: 0;
+}
+ul > li, ol > li {
+	list-style: none;
+	list-style-type: none;
+}
+
+.alert {
+	font-size: 14px;
+}
+.dropdown-toggle, .dropdown-menu, .dropdown-menu > li > a {
+	border-radius: 0 !important;
+}
+.not-too-big {
+	max-width: 580px;
+	margin: 0 auto;
+}
+
+div[contenteditable] { 
+    width: 500px;
+    height: 200px;
+	background-color: yellow;
+}
+
+#form_style {
+	display: flex;
+	flex-direction: column;
+	text-align: center;
+	align-items: center;
+	/* justify-content: space-evenly;  */
+}
+
+.font_temp {
+	font-size: 20px;
+}
+
+#form_left {
+	/* display: flex; */
+	text-align: left;
+	/* justify-content: space-between;  */
+}
+
+#form_right {
+	/* display: flex; */
+	text-align: left;
+	/* justify-content: space-between;  */
+}
+
+#result {
+	text-align: left;
+}
+
+@media (min-width: 1200px) {
+	.container {
+		width: 1500px;
+	}
+}
