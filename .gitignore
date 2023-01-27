@@ -4,7 +4,7 @@ results
 test_data
 data
 tmp
-
+migrations
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
