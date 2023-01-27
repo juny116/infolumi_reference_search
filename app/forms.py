@@ -8,6 +8,7 @@ MAX_AUTHOR = [(3,'3인'),(6, '6인'),(999,'제한없음')]
 ADD_SPECIAL_CHAR = [(True, '특수문자 유지'),(False, '특수문자 삭제')]
 ADD_ISSUE = [(True,'issue 유지'),(False, 'issue 삭제')]
 ADD_JOURNAL_PUNCT = [(True,'학술지명 마침표 유지'),(False, '학술지명 마침표 삭제')]
+DUPLICATE_PAGE = [(True,'중복 페이지 유지'),(False, '중복 페이지 삭제')]
 
 class SearchForm(forms.Form):
     references = forms.CharField(widget=forms.Textarea(attrs={'style': 'width: 1500px; height: 800px'}))
@@ -40,10 +41,11 @@ class SettingsForm(forms.ModelForm):
     
     class Meta:
         model = Settings
-        fields = ("max_auth", "special_char", "issue", "journal_punct")
+        fields = ("max_auth", "special_char", "issue", "journal_punct", "duplicate_page")
         widgets = {
             'max_auth': forms.Select(attrs={'style': 'font-size: 20px'}, choices=MAX_AUTHOR),
             'special_char': forms.Select(attrs={'style': 'font-size: 20px'}, choices=ADD_SPECIAL_CHAR),
             'issue': forms.Select(attrs={'style': 'font-size: 20px'}, choices=ADD_ISSUE),
             'journal_punct': forms.Select(attrs={'style': 'font-size: 20px'}, choices=ADD_JOURNAL_PUNCT),
+            'duplicate_page': forms.Select(attrs={'style': 'font-size: 20px'}, choices=DUPLICATE_PAGE),
         }

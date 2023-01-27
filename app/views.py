@@ -35,12 +35,14 @@ def search(request):
     target = None
     results = None
     error = False
-    # request.user
+
     if request.method == 'POST':
+        item, created = Settings.objects.get_or_create(user=request.user, 
+            defaults={'max_auth': 3, 'special_char': True, 'issue': True, 'journal_punct': True, 'duplicate_page': True})
         form = SearchForm(request.POST)
         if form.is_valid():
-            uid_dict, original_list = SearchPubmedWeb(form.cleaned_data['references'].splitlines(), None)
-            revised_text = FetchPubmedAPI(uid_dict, original_list, None)
+            uid_dict, original_list = SearchPubmedWeb(form.cleaned_data['references'].splitlines(), item)
+            revised_text = FetchPubmedAPI(uid_dict, original_list, item)
             form = SearchForm(initial={'references': revised_text})
             return render(request, 'web/search.html', {'form': form, 'target': target, 'results': revised_text, 'error': error})            
     else:

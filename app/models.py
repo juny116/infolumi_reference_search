@@ -9,3 +9,4 @@ class Settings(models.Model):
     special_char = models.BooleanField()
     issue = models.BooleanField()
     journal_punct = models.BooleanField()
+    duplicate_page = models.BooleanField()
