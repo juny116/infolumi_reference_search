@@ -171,6 +171,9 @@ def FetchPubmedAPI(uid_dict, original_list, setting):
             else:
                 revised += f"{journal['ISOAbbreviation']} "
             revised += f"{journal['JournalIssue']['PubDate']['Year']}"
+            if setting.month:
+                if journal['JournalIssue']['PubDate'].get('Month'):
+                    revised += f" {journal['JournalIssue']['PubDate']['Month']}"
             if journal['JournalIssue'].get('Volume'):
                 revised += f";{journal['JournalIssue']['Volume']}"
             if journal['JournalIssue'].get('Issue') and setting.issue:

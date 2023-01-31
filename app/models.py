@@ -10,3 +10,4 @@ class Settings(models.Model):
     issue = models.BooleanField()
     journal_punct = models.BooleanField()
     duplicate_page = models.BooleanField()
+    month = models.BooleanField()
