@@ -23,11 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ["INFOLUMI_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['kari.snu.ac.kr', 'localhost', '127.0.0.1']
 
-CSRF_TRUSTED_ORIGINS = ["http://kari.snu.ac.kr:8889"]
+CSRF_TRUSTED_ORIGINS = ["http://kari.snu.ac.kr:8899"]
 
 
 # Application definition

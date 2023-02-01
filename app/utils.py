@@ -149,7 +149,8 @@ def FetchPubmedAPI(uid_dict, original_list, setting):
             authors = results['PubmedArticleSet']['PubmedArticle'][uid_index]['MedlineCitation']['Article']['AuthorList']['Author']
             title = results['PubmedArticleSet']['PubmedArticle'][uid_index]['MedlineCitation']['Article']['ArticleTitle']
             journal = results['PubmedArticleSet']['PubmedArticle'][uid_index]['MedlineCitation']['Article']['Journal']
-            page = results['PubmedArticleSet']['PubmedArticle'][uid_index]['MedlineCitation']['Article']['Pagination']
+            page = results['PubmedArticleSet']['PubmedArticle'][uid_index]['MedlineCitation']['Article'].get('Pagination', {})
+            # page = results['PubmedArticleSet']['PubmedArticle'][uid_index]['MedlineCitation']['Article']['Pagination']
 
             if len(authors) > max(6, setting.max_auth):
                 authors = authors[:setting.max_auth]
@@ -181,18 +182,19 @@ def FetchPubmedAPI(uid_dict, original_list, setting):
                     revised += f";({journal['JournalIssue']['Issue']})"
                 else:
                     revised += f"({journal['JournalIssue']['Issue']})"
-            if setting.duplicate_page:
-                if page.get('StartPage') != page.get('EndPage'):
-                    revised += f":{page.get('StartPage')}-{page.get('EndPage')}"
+            if page:
+                if setting.duplicate_page:
+                    if page.get('StartPage') != page.get('EndPage'):
+                        revised += f":{page.get('StartPage')}-{page.get('EndPage')}"
+                    else:
+                        revised += f":{page.get('StartPage')}"
                 else:
-                    revised += f":{page.get('StartPage')}"
-            else:
-                if page.get('MedlinePgn'):
-                    revised += f":{page.get('MedlinePgn')}"
-                elif page.get('EndPage'):
-                    revised += GetMedlinePage(page.get('StartPage'), page.get('EndPage'))
-                else:
-                    revised += f":{page.get('StartPage')}"
+                    if page.get('MedlinePgn'):
+                        revised += f":{page.get('MedlinePgn')}"
+                    elif page.get('EndPage'):
+                        revised += GetMedlinePage(page.get('StartPage'), page.get('EndPage'))
+                    else:
+                        revised += f":{page.get('StartPage')}"
             revised += '.'
 
             revised_list.append(revised)

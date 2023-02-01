@@ -12,6 +12,7 @@
         {% csrf_token %}
         <div  id="form_style">
           참고문헌 <br>
+          필수 조건: 번호. 저자. 제목순을 지키는 것만 현재 버전에서는 허용<br>
           {{ form.references }}     <br><br>
         </div>
         <input type="submit" value="검색 시작">

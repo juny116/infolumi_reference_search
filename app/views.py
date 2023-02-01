@@ -9,11 +9,11 @@ def index(request):
 
 
 def settings(request):
-    if not request.user.is_authenticated:
+    if not request.user.is_superuser:
         return redirect('index')
     # try:
     item, created = Settings.objects.get_or_create(user=request.user, 
-        defaults={'max_auth': 3, 'special_char': True, 'issue': True, 'journal_punct': True})
+        defaults={'max_auth': 3, 'special_char': True, 'issue': True, 'journal_punct': True, 'duplicate_page': False, 'month': False})
 
     success = False
     if request.method == 'POST':
@@ -29,7 +29,7 @@ def settings(request):
 
 
 def search(request):
-    if not request.user.is_authenticated:
+    if not request.user.is_superuser:
         return redirect('index')
     # question = get_object_or_404(Question, pk=question_id)
     target = None
