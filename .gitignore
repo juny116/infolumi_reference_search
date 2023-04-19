@@ -1,6 +1,7 @@
 logs
 conf/discord/*
 !conf/discord/sample.json
+outputs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
