@@ -1,0 +1,7 @@
+save_path: logs
+
+defaults:
+  - discord: base
+  - template: base
+  - model: chatgpt
+  - _self_
