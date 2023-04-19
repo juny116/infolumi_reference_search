@@ -25,17 +25,18 @@ class LLMBot(discord.Client):
         super().__init__(intents=intents)
         self.config = config
         self.history = ChatMessageHistory()
+        self.model = load_model(self.config['model'])
 
     def create_user_dict(self):
         self.name_to_id = {str(member.name): str(member.id) for member in self.get_all_members() if member.name != 'UtilBot'}
         self.id_to_name = {str(member.id): str(member.name) for member in self.get_all_members() if member.name != 'UtilBot'}
-        self.member_list = [member.name for member in self.get_all_members()]
+        self.member_list = [member.name for member in self.get_all_members() if member.name != 'UtilBot']
 
     def clear_history(self):
         self.current_turn = 0
         self.history.clear()
 
-    def renew_system(self, add_prompt=None):
+    def renew_system(self, add_prompt=''):
         system_message_prompt = SystemMessagePromptTemplate.from_template(self.config['template']['system'])
         system_message = system_message_prompt.format(member_list=', '.join(self.member_list), current_member=self.user.name, additional_prompt=add_prompt)
         self.clear_history()
@@ -58,7 +59,6 @@ class LLMBot(discord.Client):
         self.max_turns = 30
         self.create_user_dict()
         self.renew_system()
-        self.model = load_model(self.config['model'])
         await self.change_presence(status=discord.Status.online, activity=discord.Game("대기중"))
  
     async def on_message(self, message):
@@ -78,6 +78,11 @@ class LLMBot(discord.Client):
                 if content.startswith('!clear'):
                     self.clear_history()
                     await message.channel.send('*** History Cleared ***')
+
+                if content.startswith('!prompt'):
+                    add_prompt = ' '.join(content.split(' ')[1:])
+                    self.renew_system(add_prompt=add_prompt)
+                    await message.channel.send(f'*** History Cleared And Prompt `{add_prompt}` Added ***')
 
                 elif content.startswith('!save'):
                     fname = self.save_history(content)
@@ -105,10 +110,11 @@ class LLMBot(discord.Client):
                 else:
                     self.current_turn += 1
                     self.history.add_user_message(content)
-                    response = self.model.generate(self.history)
-                    self.history.add_ai_message(response)
-
+                    response = self.model.generate(self.history, self.user.name)
+                    # remove author from the message to send chat without author
                     response = remove_author(self.user.name, response)
+                    # save the response to the history with author
+                    self.history.add_ai_message(add_author(self.user.name, response))
                     response = convert_name_to_id(self.name_to_id, response)
                     await message.channel.send(response)
             else:

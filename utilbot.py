@@ -35,7 +35,8 @@ class UtilBot(discord.Client):
                     await message.channel.send(f'*** Deleted {len(deleted)} message(s) ***')
 
                 elif content.startswith('!ping'):
-                    await message.channel.send('*** Pong {0.author.mention} ***'.format(message))
+                    await message.channel.send("ZeldaLink")
+                    # await message.channel.send('*** Pong {0.author.mention} ***'.format(message))
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
