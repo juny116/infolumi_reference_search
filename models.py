@@ -5,14 +5,16 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage
 )
-from utils import chat_history_to_prompt
+from utils import messages_to_prompt
 from accelerate import init_empty_weights, infer_auto_device_map
 from transformers import (
     AutoTokenizer, 
     AutoModelForCausalLM, 
     AutoModelForSeq2SeqLM, 
     T5ForConditionalGeneration, 
-    T5Config
+    T5Config,
+    LlamaForCausalLM, 
+    LlamaTokenizer
 )
 import torch
 import copy
@@ -27,15 +29,23 @@ class ChatGPT():
         print(self.model.json)
 
     def generate(self, history, name):
-        prompt = chat_history_to_prompt(history)
+        messages = history.get_messages_within_max_length()
+        print(messages)
+        # For debug purposes
+        prompt = messages_to_prompt(messages)
         print(prompt)
-        messages = copy.deepcopy(history.messages)
+
+        # messages = copy.deepcopy(history.messages)
         messages.append(AIMessage(content=f"{name}:"))
         response = self.model(messages=messages).content.strip()
         response = f"{name}: " + response
-        print(response)
-        return response
+        token_length = self.model.get_num_tokens(response)
 
+        print(response)
+        return response, token_length
+
+    def get_num_tokens(self, text):
+        return self.model.get_num_tokens(text)
 
 class OpenAIGPT():
     def __init__(self, config):
@@ -46,14 +56,17 @@ class OpenAIGPT():
         print(self.model.json)
 
     def generate(self, history, name):
-        prompt = chat_history_to_prompt(history) + f"{name}:"
+        prompt = history.get_prompt_within_max_length() + f"{name}:"
+        # prompt = chat_history_to_prompt(history) 
         print(prompt)
         response = self.model(prompt).strip()
         response = f"{name}: " + response
+        token_length = self.model.get_num_tokens(response)
         print(response)
-        return response
+        return response, token_length
 
-
+    def get_num_tokens(self, text):
+        return self.model.get_num_tokens(text)
 class FlanUL2():
     def __init__(self, config):
         self.config = config
@@ -124,11 +137,45 @@ class FlanT5():
         return response
 
 
+class Vicuna():
+    def __init__(self, config):
+        self.config = config
+        self.tokenizer = LlamaTokenizer.from_pretrained(self.config['model_path'])
+        print("Loading model...")
+        self.model = LlamaForCausalLM.from_pretrained(self.config['model_path'], torch_dtype=torch.float16)
+        print("Model loaded")
+        self.device = torch.device(f'cuda:{self.config["device"]}')
+        self.model.to(self.device)
+
+    def generate(self, history, name):
+        prompt = chat_history_to_prompt(history)
+        prompt = chat_history_to_prompt(history) + f"{name}:"
+        print('***********************************')
+        print(prompt, end=' ')
+        input_ids = self.tokenizer(prompt, return_tensors="pt", max_length=self.config['max_tokens'], truncation=True).input_ids.to(self.device)
+        input_len = input_ids.shape[1]
+        outputs = self.model.generate(
+            input_ids,
+            max_new_tokens=100,
+            temperature=self.config['temperature'],
+            do_sample=True,
+            num_return_sequences=1,
+            remove_invalid_values=True,
+            return_dict_in_generate=True,
+        )
+        response = self.tokenizer.decode(outputs.sequences[0][input_len:], skip_special_tokens=True).strip()
+        print(response)
+        response = f"{name}: " + response
+
+        return response
+
+
 type_to_class = {
     'chatgpt': ChatGPT,
     'openai': OpenAIGPT,
     'flan-ul2': FlanUL2,
     'flan-t5': FlanT5,
+    'vicuna': Vicuna,
 }
 
 def load_model(config):

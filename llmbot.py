@@ -15,7 +15,7 @@ import requests
 from discord.utils import escape_mentions, remove_markdown
 import json
 from models import load_model
-from utils import remove_mention, convert_id_to_name, convert_name_to_id, add_author, remove_author
+from utils import remove_mention, convert_id_to_name, convert_name_to_id, add_author, remove_author, ChatMessageHistoryWithTokenLength
 import hydra
 from omegaconf import DictConfig
 
@@ -24,23 +24,29 @@ class LLMBot(discord.Client):
     def __init__(self, config, intents):
         super().__init__(intents=intents)
         self.config = config
-        self.history = ChatMessageHistory()
+        self.history = ChatMessageHistoryWithTokenLength()
         self.model = load_model(self.config['model'])
 
     def create_user_dict(self):
-        self.name_to_id = {str(member.name): str(member.id) for member in self.get_all_members() if member.name != 'UtilBot'}
-        self.id_to_name = {str(member.id): str(member.name) for member in self.get_all_members() if member.name != 'UtilBot'}
-        self.member_list = [member.name for member in self.get_all_members() if member.name != 'UtilBot']
+        if self.config['discord'].get('channel_id'):
+            members = list(self.get_channel(self.config['discord']['channel_id']).members)
+        else:
+            members = list(self.get_all_members())
+        self.name_to_id = {str(member.name): str(member.id) for member in members if member.name != 'UtilBot'}
+        self.id_to_name = {str(member.id): str(member.name) for member in members if member.name != 'UtilBot'}
+        self.member_list = [member.name for member in members if member.name != 'UtilBot']
 
     def clear_history(self):
         self.current_turn = 0
         self.history.clear()
 
     def renew_system(self, add_prompt=''):
+        self.clear_history()
         system_message_prompt = SystemMessagePromptTemplate.from_template(self.config['template']['system'])
         system_message = system_message_prompt.format(member_list=', '.join(self.member_list), current_member=self.user.name, additional_prompt=add_prompt)
-        self.clear_history()
-        self.history.messages.append(system_message)
+        num_tokens = self.model.get_num_tokens(system_message.content)
+        system_message.additional_kwargs['token_length'] = num_tokens
+        self.history = ChatMessageHistoryWithTokenLength(system_message)
 
     def save_history(self, content):
         save_path = self.config['save_path']
@@ -76,7 +82,7 @@ class LLMBot(discord.Client):
                 content = remove_mention(message.content).strip()
  
                 if content.startswith('!clear'):
-                    self.clear_history()
+                    self.renew_system()
                     await message.channel.send('*** History Cleared ***')
 
                 if content.startswith('!prompt'):
@@ -88,11 +94,16 @@ class LLMBot(discord.Client):
                     fname = self.save_history(content)
                     await message.channel.send(f"*** Saved to {fname} ***")
 
-                elif content.startswith('!max'):
+                elif content.startswith('!max_turn'):
                     max_turns = content.split(' ')[-1]
                     self.max_turns = int(max_turns)
                     await message.channel.send(f"*** Max turn set to {self.max_turns} ***")
-                
+
+                elif content.startswith('!max_token'):
+                    max_tokens = content.split(' ')[-1]
+                    self.history.max_length = int(max_tokens)
+                    await message.channel.send(f"*** Max token lenght set to {self.history.max_length} ***")            
+
                 elif content.startswith('!ping'):
                     await message.channel.send('*** pong {0.author.mention} ***'.format(message))
     
@@ -109,16 +120,18 @@ class LLMBot(discord.Client):
                     await message.channel.send("*** You have reached the maximum number of turns. Please start a new conversation. ***")
                 else:
                     self.current_turn += 1
-                    self.history.add_user_message(content)
-                    response = self.model.generate(self.history, self.user.name)
+                    num_token = self.model.get_num_tokens(content)
+                    self.history.add_user_message(content, num_token)
+                    response, token_length = self.model.generate(self.history, self.user.name)
                     # remove author from the message to send chat without author
                     response = remove_author(self.user.name, response)
                     # save the response to the history with author
-                    self.history.add_ai_message(add_author(self.user.name, response))
+                    self.history.add_ai_message(add_author(self.user.name, response), token_length)
                     response = convert_name_to_id(self.name_to_id, response)
                     await message.channel.send(response)
             else:
-                self.history.add_user_message(content)
+                num_token = self.model.get_num_tokens(content)
+                self.history.add_user_message(content, num_token)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
