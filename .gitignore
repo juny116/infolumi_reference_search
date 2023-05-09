@@ -2,6 +2,8 @@ logs
 conf/discord/*
 !conf/discord/sample.yaml
 outputs
+conf/template/*
+!conf/template/base.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

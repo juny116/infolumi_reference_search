@@ -1,5 +1,8 @@
 save_path: logs
 
+long_term_memory: true
+host: "localhost:9200"
+
 defaults:
   - discord: base
   - template: base

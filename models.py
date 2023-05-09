@@ -17,7 +17,6 @@ from transformers import (
     LlamaTokenizer
 )
 import torch
-import copy
 
 
 class ChatGPT():
@@ -29,13 +28,10 @@ class ChatGPT():
         print(self.model.json)
 
     def generate(self, history, name):
-        messages = history.get_messages_within_max_length()
-        print(messages)
+        messages = history.get_messages()
         # For debug purposes
         prompt = messages_to_prompt(messages)
         print(prompt)
-
-        # messages = copy.deepcopy(history.messages)
         messages.append(AIMessage(content=f"{name}:"))
         response = self.model(messages=messages).content.strip()
         response = f"{name}: " + response
@@ -56,8 +52,7 @@ class OpenAIGPT():
         print(self.model.json)
 
     def generate(self, history, name):
-        prompt = history.get_prompt_within_max_length() + f"{name}:"
-        # prompt = chat_history_to_prompt(history) 
+        prompt = history.get_prompt() + f"{name}:"
         print(prompt)
         response = self.model(prompt).strip()
         response = f"{name}: " + response
@@ -67,6 +62,9 @@ class OpenAIGPT():
 
     def get_num_tokens(self, text):
         return self.model.get_num_tokens(text)
+    
+
+#TODO: update to work properly
 class FlanUL2():
     def __init__(self, config):
         self.config = config
@@ -91,8 +89,7 @@ class FlanUL2():
         return T5ForConditionalGeneration.from_pretrained(self.config['model_name'], device_map=device_map, torch_dtype=torch.float16)
 
     def generate(self, history, name):
-        prompt = chat_history_to_prompt(history)
-        prompt = chat_history_to_prompt(history) + f"{name}:"
+        prompt = history.get_prompt() + f"{name}:"
         print(prompt)
         input_ids = self.tokenizer(prompt, return_tensors="pt", max_length=self.config['max_tokens'], truncation=True).input_ids.to(self.input_device)
         outputs = self.model.generate(
@@ -119,8 +116,7 @@ class FlanT5():
         self.model.to(self.device)
 
     def generate(self, history, name):
-        prompt = chat_history_to_prompt(history)
-        prompt = chat_history_to_prompt(history) + f"{name}:"
+        prompt = history.get_prompt() + f"{name}:"
         print(prompt)
         input_ids = self.tokenizer(prompt, return_tensors="pt", max_length=self.config['max_tokens'], truncation=True).input_ids.to(self.device)
         outputs = self.model.generate(
@@ -148,8 +144,7 @@ class Vicuna():
         self.model.to(self.device)
 
     def generate(self, history, name):
-        prompt = chat_history_to_prompt(history)
-        prompt = chat_history_to_prompt(history) + f"{name}:"
+        prompt = history.get_prompt() + f"{name}:"
         print('***********************************')
         print(prompt, end=' ')
         input_ids = self.tokenizer(prompt, return_tensors="pt", max_length=self.config['max_tokens'], truncation=True).input_ids.to(self.device)
