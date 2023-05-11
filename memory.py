@@ -20,6 +20,10 @@ class ChatMessageHistoryWithContextWindow(BaseChatMessageHistory):
     messages: List[BaseMessage] = []
     window_size: int = 2048
 
+    def __init__(self, window_size) -> None:
+        super().__init__()
+        self.window_size = window_size
+
     def add_user_message(self, message: str, token_length: int) -> None:
         self.messages.append(
             HumanMessage(
@@ -99,12 +103,14 @@ class ChatMessageHistoryWithLongTerm(ChatMessageHistoryWithContextWindow):
     key: int = 0
     current_length: int = 0
 
-    def __init__(self, host, index) -> None:
+    def __init__(self, host, index, window_size, memory_size) -> None:
         super().__init__()
         self.host = host
         self.index = index.lower()
         self.es = Elasticsearch(self.host)
         self.create_index()
+        self.window_size = window_size
+        self.memory_size = memory_size
 
     def create_index(self) -> None:
         if self.es.indices.exists(index=self.index):

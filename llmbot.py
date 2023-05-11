@@ -88,16 +88,16 @@ class LLMBot(discord.Client):
 
     async def on_ready(self):
         print("Logged on as {0}!".format(self.user))
-        self.max_turns = 10
+        self.max_turns = self.config["max_turns"]
         self.current_turn = 0
         self.create_user_dict()
         if self.config["long_term_memory"]:
             self.history = ChatMessageHistoryWithLongTerm(
-                self.config["host"], self.user.name
+                self.config["host"], self.user.name, self.config["window_size"], self.config["memory_size"]
             )
         else:
             print("No long term memory")
-            self.history = ChatMessageHistoryWithContextWindow()
+            self.history = ChatMessageHistoryWithContextWindow(self.config["window_size"])
         self.renew_system()
         await self.change_presence(
             status=discord.Status.online, activity=discord.Game("대기중")
@@ -148,7 +148,7 @@ class LLMBot(discord.Client):
                         f"***Get from LongTermMem\n{response}***"
                     )
 
-                elif content.startswith("!max_turn"):
+                elif content.startswith("!max_turns"):
                     max_turns = content.split(" ")[-1]
                     self.max_turns = int(max_turns)
                     await message.channel.send(
@@ -157,7 +157,7 @@ class LLMBot(discord.Client):
 
                 elif content.startswith("!max_token"):
                     max_tokens = content.split(" ")[-1]
-                    self.history.max_length = int(max_tokens)
+                    self.history.window_size = int(max_tokens)
                     await message.channel.send(
                         f"*** Max token lenght set to {self.history.max_length} ***"
                     )
