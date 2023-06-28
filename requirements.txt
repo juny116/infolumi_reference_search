@@ -1,0 +1,8 @@
+hydra-core
+openai
+langchain
+discord.py
+elasticsearch
+torch
+transformers
+accelerate

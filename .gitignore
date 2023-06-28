@@ -2,7 +2,12 @@ logs
 conf/discord/*
 !conf/discord/sample.yaml
 outputs
+<<<<<<< HEAD
 .vscode
+=======
+conf/template/*
+!conf/template/base.yaml
+>>>>>>> 0ae030f713c1007599a51e9fbd7ceb5991638868
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

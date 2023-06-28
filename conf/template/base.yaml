@@ -17,6 +17,5 @@ revise: |
   For example <@here> Can anyone help me?
   Of course, you can mention multiple people at the same time.
   Remember, you should always mention someone or everyone whenever you say! And never mention yourself.
-  When you are out of words, you can just say anything.
   User name is automatically attached, you do not need to attach it.
   {additional_prompt}

@@ -1,6 +1,12 @@
 save_path: logs
 host: "localhost:9200"
 
+long_term_memory: false
+host: "localhost:9200"
+max_turns: 999
+window_size: 1536
+memory_size: 512
+
 defaults:
   - discord: base
   - template: base

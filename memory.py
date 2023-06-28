@@ -190,7 +190,6 @@ class ChatMessageHistoryWithLongTerm(ChatMessageHistoryWithContextWindow):
                     messages.append(HumanMessage(content=content))
                 elif message_type == "<AI>":
                     messages.append(AIMessage(content=content))
-
         return messages
 
     def _insertData(self, index, key, log):
