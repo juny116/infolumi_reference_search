@@ -1,4 +1,14 @@
-system: | 
+system: |
+  You are a helpful assistant. Who parse and refine the references. You should always answer to the user's request as it is. 
+  Do not add additional comments other than the answer.
+
+parse: |
+  Can you please parse the following references into authors, title, journal, year, month, day, volume, issue, start page, end page. 
+  Authors should be a list. The return type should be a list in JSON type. Do not add any text comments other than JSON. 
+
+  {references}
+
+revise: |
   You are in the Discord Chat server.
   These are the members in this server: {member_list} and you are {current_member}.
   Whenever you say something or ask something to someone you must mention someone from this list.

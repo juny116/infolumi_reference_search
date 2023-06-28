@@ -1,4 +1,0 @@
-type: flan-t5
-model_name: google/flan-t5-xxl
-device: 0
-max_tokens: 2048

@@ -1,5 +1,0 @@
-type: vicuna
-model_path: /data/transformers/vicuna-13b
-device: 0
-max_tokens: 2048
-temperature: 0.1

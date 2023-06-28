@@ -1,6 +1,0 @@
-type: flan-ul2
-model_name: google/flan-ul2
-devices: [0, 1]
-vram_per_device: 48GiB
-first_device_limit: 20GiB
-max_tokens: 2048

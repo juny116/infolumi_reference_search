@@ -1,4 +1,5 @@
 save_path: logs
+host: "localhost:9200"
 
 defaults:
   - discord: base
