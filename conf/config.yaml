@@ -1,14 +1,13 @@
 save_path: logs
-host: "localhost:9200"
 
 long_term_memory: false
 host: "localhost:9200"
 max_turns: 999
 window_size: 1536
 memory_size: 512
-
+temp_path: /tmp
 defaults:
-  - discord: base
+  - discord: infolumi
   - template: base
   - model: chatgpt
   - _self_

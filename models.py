@@ -22,3 +22,13 @@ class ChatGPT:
     async def agenerate(self, messages):
         resp = await self.model._agenerate(messages=messages)
         return resp.generations[0].text
+
+
+type_to_class = {
+    "chatgpt": ChatGPT,
+}
+
+
+def load_model(config):
+    model_type = config["type"]
+    return type_to_class[model_type](config)

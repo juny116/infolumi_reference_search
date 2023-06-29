@@ -53,58 +53,6 @@ class LLMBot(discord.Client):
         self.config = config
         self.model = load_model(self.config["model"])
 
-    def create_user_dict(self):
-        if self.config["discord"].get("channel_id"):
-            members = list(
-                self.get_channel(self.config["discord"]["channel_id"]).members
-            )
-        else:
-            members = list(self.get_all_members())
-        self.name_to_id = {
-            str(member.name): str(member.id)
-            for member in members
-            if member.name != "UtilBot"
-        }
-        self.id_to_name = {
-            str(member.id): str(member.name)
-            for member in members
-            if member.name != "UtilBot"
-        }
-        self.member_list = [
-            member.name for member in members if member.name != "UtilBot"
-        ]
-
-    def clear_history(self):
-        self.current_turn = 0
-        self.history.clear()
-        self.history.delete_index()
-        # self.history.create_index()
-
-    def renew_system(self, add_prompt=""):
-        system_message_prompt = SystemMessagePromptTemplate.from_template(
-            self.config["template"]["system"]
-        )
-        system_message = system_message_prompt.format(
-            member_list=", ".join(self.member_list),
-            current_member=self.user.name,
-            additional_prompt=add_prompt,
-        )
-        num_tokens = self.model.get_num_tokens(system_message.content)
-        system_message.additional_kwargs["token_length"] = num_tokens
-        self.history.set_system_message(system_message)
-
-    def save_history(self, content):
-        save_path = self.config["save_path"]
-        try:
-            fname = content.split(" ")[1]
-            fname = f"{save_path}/{self.user.name}{fname}.json"
-        except:
-            fname = f"{save_path}/{self.user.name}.json"
-        with open(fname, "w") as f:
-            json.dump(messages_to_dict(self.history.messages), f)
-
-        return fname
-
     async def on_ready(self):
         print("Logged on as {0}!".format(self.user))
         await self.change_presence(
@@ -121,25 +69,19 @@ class LLMBot(discord.Client):
         # Only respond to the message if it is sent to the bot by mentioning
         if self.user.mentioned_in(message):
             # Check if the maximum number of turns has been reached
-            await message.channel.send("waiting for file to download...")
+            thread = await message.create_thread(name="reply", auto_archive_duration=60)
+            await thread.send("waiting for file to download...")
             for x in message.attachments:
-                print("attachment-->", x.url)
-                headers = {
-                    "User-Agent": "DiscordBot (https://github.com/Rapptz/discord.py 0.2) Python/3.9 aiohttp/2.3"
-                }
-                d_url = requests.get(x.url, headers=headers)
                 file_name = x.url.split("/")[-1]
-                # response = wget.download(x.url, file_name)
-
-                # file_name = "KRCP-21-043_ref.docx"
-                # print(file_name)
-                with open(file_name, "wb") as f:
-                    f.write(d_url.content)
-                self.loop.create_task(self.test(file_name))
+                print(x.url)
+                print(f"{self.config['temp_path']}/{file_name}")
+                file_name = f"{self.config['temp_path']}/{file_name}"
+                await x.save(file_name)
+                self.loop.create_task(self.test(file_name, thread))
                 break
-            await message.channel.send("STARTED")
+            await thread.send("STARTED")
 
-    async def test(self, fname):
+    async def test(self, fname, thread):
         # check the total time
         start_time = time()
         channel = self.get_channel(self.config["discord"]["channel_id"])
@@ -164,7 +106,7 @@ class LLMBot(discord.Client):
             temp = chat_prompt.format_prompt(
                 references="\n".join(sub_list)
             ).to_messages()
-            tasks.append(self.parse_reference(temp, channel, i, max_turn))
+            tasks.append(self.parse_reference(temp, channel, i, max_turn, thread))
             break
         results_list = await asyncio.gather(*tasks)
         dummy = {
@@ -195,21 +137,27 @@ class LLMBot(discord.Client):
             else:
                 uid_list.append(self.search_pubmed(reference))
                 await asyncio.sleep(0.3)
-        print("uid_list", uid_list)
-        results = self.fetch_pubmed(uid_list)
-        fp = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt")
-        for r in results:
-            print(r, file=fp)
+
+        uid_without_none = [x for x in uid_list if x is not None]
+        uid_to_article = self.fetch_pubmed(uid_without_none)
+        results = self.revise_reference(uid_list, uid_to_article)
+
+        fp = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".docx")
         fname = fp.name
         fp.close()
+        doc = docx.Document()
+        for r in results:
+            doc.add_paragraph(r)
+        doc.save(fname)
 
-        await channel.send(
-            f"Done in {(time()-start_time):.2} seconds", file=discord.File(fname)
+        await thread.send(
+            f"Done in {(time()-start_time):.2} seconds",
+            file=discord.File(fname),
         )
 
-    async def parse_reference(self, messages, channel, index, max_turn):
+    async def parse_reference(self, messages, channel, index, max_turn, thread):
         results = await self.model.agenerate(messages)
-        await channel.send(f"parsing references {index+1}/{max_turn} done")
+        await thread.send(f"parsing references {index+1}/{max_turn} done")
         return results
 
     def search_pubmed(self, reference):
@@ -240,68 +188,68 @@ class LLMBot(discord.Client):
         return None
 
     def fetch_pubmed(self, uid_list):
-        # uids without None
-        uid_string = ",".join([uid for uid in uid_list if uid is not None])
-        params = {"db": "pubmed", "id": uid_string, "retmode": "xml"}
-        res = requests.get(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?", params=params
+        uid_string = ",".join(uid_list)
+        data = {"db": "pubmed", "id": uid_string, "retmode": "xml"}
+        res = requests.post(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?", data=data
         )
         results = xmltodict.parse(res.text)
 
-        uid_index = 0
-        revised_refs = []
+        fetch_dict = {}
         for k, uid in enumerate(uid_list):
+            fetch_dict[uid] = results["PubmedArticleSet"]["PubmedArticle"][k][
+                "MedlineCitation"
+            ]["Article"]
+
+        return fetch_dict
+
+    def revise_reference(self, uid_list, uid_to_article):
+        revised_refs = []
+        for i, uid in enumerate(uid_list):
             max_authors = False
-            revised = f"{k+1}. "
+            revised = f"{i+1}. "
             if uid is None:
                 revised_refs.append(revised + "Not Found")
-                continue
-
-            authors = results["PubmedArticleSet"]["PubmedArticle"][uid_index][
-                "MedlineCitation"
-            ]["Article"]["AuthorList"]["Author"]
-            title = results["PubmedArticleSet"]["PubmedArticle"][uid_index][
-                "MedlineCitation"
-            ]["Article"]["ArticleTitle"]
-            journal = results["PubmedArticleSet"]["PubmedArticle"][uid_index][
-                "MedlineCitation"
-            ]["Article"]["Journal"]
-            page = results["PubmedArticleSet"]["PubmedArticle"][uid_index][
-                "MedlineCitation"
-            ]["Article"]["Pagination"]
-            if len(authors) > 6:
-                authors = authors[:3]
-                max_authors = True
-
-            if type(authors) == list:
-                authors = [
-                    f"{author['LastName']} {author['Initials']}" for author in authors
-                ]
-            elif type(authors) == dict:
-                authors = [f"{authors['LastName']} {authors['Initials']}"]
-            revised += ", ".join(authors)
-            if max_authors:
-                revised += ", et al"
-
-            revised += f". {title} "
-            revised += f"{journal['ISOAbbreviation']}. "
-            revised += f"{journal['JournalIssue']['PubDate']['Year']}"
-            if journal["JournalIssue"].get("Volume"):
-                revised += f";{journal['JournalIssue']['Volume']}"
-            if journal["JournalIssue"].get("Issue"):
-                if journal["JournalIssue"].get("Volume") is None:
-                    revised += f";({journal['JournalIssue']['Issue']})"
-                else:
-                    revised += f"({journal['JournalIssue']['Issue']})"
-
-            if page.get("EndPage"):
-                revised += GetMedlinePage(page.get("StartPage"), page.get("EndPage"))
             else:
-                revised += f":{page.get('StartPage')}"
-            revised += "."
-            uid_index += 1
-            revised_refs.append(revised)
+                authors = uid_to_article[uid]["AuthorList"]["Author"]
+                title = uid_to_article[uid]["ArticleTitle"]
+                journal = uid_to_article[uid]["Journal"]
+                page = uid_to_article[uid]["Pagination"]
 
+                if len(authors) > 6:
+                    authors = authors[:3]
+                    max_authors = True
+
+                if type(authors) == list:
+                    authors = [
+                        f"{author['LastName']} {author['Initials']}"
+                        for author in authors
+                    ]
+                elif type(authors) == dict:
+                    authors = [f"{authors['LastName']} {authors['Initials']}"]
+                revised += ", ".join(authors)
+                if max_authors:
+                    revised += ", et al"
+
+                revised += f". {title} "
+                revised += f"{journal['ISOAbbreviation']}. "
+                revised += f"{journal['JournalIssue']['PubDate']['Year']}"
+                if journal["JournalIssue"].get("Volume"):
+                    revised += f";{journal['JournalIssue']['Volume']}"
+                if journal["JournalIssue"].get("Issue"):
+                    if journal["JournalIssue"].get("Volume") is None:
+                        revised += f";({journal['JournalIssue']['Issue']})"
+                    else:
+                        revised += f"({journal['JournalIssue']['Issue']})"
+
+                if page.get("EndPage"):
+                    revised += GetMedlinePage(
+                        page.get("StartPage"), page.get("EndPage")
+                    )
+                else:
+                    revised += f":{page.get('StartPage')}"
+                revised += "."
+                revised_refs.append(revised)
         return revised_refs
 
 
